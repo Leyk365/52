@@ -1,8 +1,10 @@
-﻿<Window x:Class="_52.MainWindow"
-   xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+﻿<Window x:Class="FoxAndChickensGame.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Foxes and Chickens" Height="500" Width="500">
-    <Grid x:Name="GridMain">
+        Title="Fox and Chickens Game" Height="600" Width="600"
+        KeyDown="Window_KeyDown"
+        >
+    <Grid Name="GridMain" Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="*"/>
