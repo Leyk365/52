@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace FoxAndChickensGame
 {
@@ -12,6 +13,7 @@ namespace FoxAndChickensGame
         private Dictionary<TextBlock, (int row, int col)> chickens = new();
         private Dictionary<TextBlock, (int row, int col)> foxes = new();
         private TextBlock selectedChicken = null;
+        private TextBlock chickenCounterText = new TextBlock();
 
         private HashSet<(int, int)> validCells = new()
         {
@@ -24,6 +26,13 @@ namespace FoxAndChickensGame
             (6,2), (6,3), (6,4),
         };
 
+        private HashSet<(int, int)> winningCells = new()
+        {
+            (0,2), (0,3), (0,4),
+            (1,2), (1,3), (1,4),
+            (2,2), (2,3), (2,4)
+        };
+
         public MainWindow()
         {
             InitializeComponent();
@@ -33,22 +42,59 @@ namespace FoxAndChickensGame
 
         private void InitializeGame()
         {
+            // Очистка предыдущей игры
+            GridMain.Children.Clear();
+            chickens.Clear();
+            foxes.Clear();
+
+            // Создаем все клетки поля
             foreach (var cell in validCells)
             {
                 var border = new Border
                 {
-                    BorderBrush = System.Windows.Media.Brushes.Black,
+                    BorderBrush = Brushes.Black,
                     BorderThickness = new Thickness(1),
-                    Background = System.Windows.Media.Brushes.Beige
+                    Background = Brushes.Beige
                 };
                 Grid.SetRow(border, cell.Item1);
                 Grid.SetColumn(border, cell.Item2);
                 GridMain.Children.Add(border);
             }
 
+            // Создаем счетчик куриц
+            var counterPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            chickenCounterText = new TextBlock
+            {
+                Text = "20",
+                FontSize = 24,
+                Margin = new Thickness(0, 0, 5, 0)
+            };
+
+            var chickenIcon = new TextBlock
+            {
+                Text = "🐥",
+                FontSize = 24
+            };
+
+            counterPanel.Children.Add(chickenCounterText);
+            counterPanel.Children.Add(chickenIcon);
+
+            Grid.SetRow(counterPanel, 0);
+            Grid.SetColumn(counterPanel, 5);
+            Grid.SetColumnSpan(counterPanel, 2);
+            GridMain.Children.Add(counterPanel);
+
+            // Добавляем лис
             AddFox(2, 2);
             AddFox(2, 4);
 
+            // Добавляем куриц
             int[,] chickenPositions =
             {
                 {3,0}, {3,1}, {3,2}, {3,3}, {3,4}, {3,5}, {3,6},
@@ -61,6 +107,8 @@ namespace FoxAndChickensGame
             {
                 AddChicken(chickenPositions[i, 0], chickenPositions[i, 1]);
             }
+
+            UpdateChickenCounter();
         }
 
         private void AddChicken(int row, int col)
@@ -94,6 +142,43 @@ namespace FoxAndChickensGame
             Grid.SetRow(fox, row);
             Grid.SetColumn(fox, col);
             GridMain.Children.Add(fox);
+        }
+
+        private void UpdateChickenCounter()
+        {
+            chickenCounterText.Text = chickens.Count.ToString();
+
+            // Проверка, осталось ли 8 или меньше куриц
+            if (chickens.Count <= 8)
+            {
+                ShowGameOverMessage();
+            }
+
+            // Проверка на победу
+            CheckForWin();
+        }
+
+        private void CheckForWin()
+        {
+            int chickensInWinningCells = chickens.Values.Count(pos => winningCells.Contains(pos));
+            if (chickensInWinningCells == 9)
+            {
+                ShowWinMessage();
+            }
+        }
+
+        private void ShowWinMessage()
+        {
+            MessageBox.Show("Congratulations! You have won!", "Victory", MessageBoxButton.OK, MessageBoxImage.Information);
+            // Перезапуск игры
+            InitializeGame();
+        }
+
+        private void ShowGameOverMessage()
+        {
+            MessageBox.Show("Game Over! You have lost.", "Game Over", MessageBoxButton.OK, MessageBoxImage.Information);
+            // Перезапуск игры
+            InitializeGame();
         }
 
         private void Chicken_Clicked(object sender, MouseButtonEventArgs e)
@@ -133,6 +218,7 @@ namespace FoxAndChickensGame
                 selectedChicken = null;
 
                 FoxesMove(); // Ход лисы после игрока
+                UpdateChickenCounter(); // Проверка на победу после каждого хода
             }
         }
 
@@ -179,6 +265,7 @@ namespace FoxAndChickensGame
                 var toRemove = chickens.First(c => c.Value == (midRow, midCol)).Key;
                 GridMain.Children.Remove(toRemove);
                 chickens.Remove(toRemove);
+                UpdateChickenCounter();
 
                 foxes[fox] = (landRow, landCol);
                 Grid.SetRow(fox, landRow);
